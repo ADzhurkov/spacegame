@@ -11,5 +11,14 @@ config_version=5
 [application]
 
 config/name="SpaceGame"
+run/main_scene="res://Kepler.tscn"
 config/features=PackedStringArray("4.4", "Forward Plus")
 config/icon="res://icon.svg"
+
+[autoload]
+
+DebugCam="*res://addons/debug_camera/scripts/DebugCamAutoload.gd"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/debug_camera/plugin.cfg")

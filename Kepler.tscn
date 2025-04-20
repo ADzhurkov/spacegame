@@ -1,0 +1,31 @@
+[gd_scene load_steps=5 format=3 uid="uid://diqco54ewpklo"]
+
+[ext_resource type="Script" uid="uid://6knhj3d0org6" path="res://orbit_body.gd" id="1_r4xq0"]
+[ext_resource type="Script" uid="uid://csq46ayb75rbm" path="res://addons/debug_camera/scripts/DebugCamera3D.gd" id="2_1wqb5"]
+[ext_resource type="Script" uid="uid://18fbne78rrja" path="res://orbit_plot.gd" id="2_o2prw"]
+
+[sub_resource type="SphereMesh" id="SphereMesh_6pilr"]
+radius = 5.0
+height = 5.0
+
+[node name="Node3D" type="Node3D"]
+
+[node name="OrbitBody" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.471939, -0.384598, 0.35675)
+mesh = SubResource("SphereMesh_6pilr")
+script = ExtResource("1_r4xq0")
+a = 100.0
+e = 0.0
+mu = 1000.0
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.93666, 0.35024, 0, -0.35024, 0.93666, -0.028532, 31.8993, 23.731)
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, -0.0121644, 0.999926, 0, -0.999926, -0.0121644, 0, 160.617, -3.93984)
+fov = 69.4548
+script = ExtResource("2_1wqb5")
+
+[node name="Node3D" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.943642, -0.600723, -0.190277)
+script = ExtResource("2_o2prw")
