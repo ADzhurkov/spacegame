@@ -3,9 +3,9 @@ extends Node3D
 
 @export var a: float     = 100.0
 @export var e: float     = 0.5
-@export var i_deg: float = 10
-@export var RAAN_deg: float = 10
-@export var omega_deg: float = 30
+@export var i_deg: float = 45
+@export var RAAN_deg: float = 45
+@export var omega_deg: float = 45
 @export var samples: int = 360
 
 var mesh_instance: MeshInstance3D
@@ -14,95 +14,149 @@ func _ready() -> void:                 # <-- leading underscore
 	#---------------------------------------------
 	# Create Orbit Plane
 	#---------------------------------------------
-	var orbit_mesh = draw_orbit(a,e,Color.AQUA)
-	var reference_plane = draw_plane_from_normal(orbit_mesh.global_transform.basis.y.normalized(),Color.BLUE)
+	#var orbit_mesh = draw_orbit(a,e,Color.AQUA)
+	var orbit_mesh = draw_orbit_thick(a,e,Color.AQUA)
+	var reference_plane = draw_plane_from_normal(Vector3.UP,Color.BLUE)
 	
-	var reference_plane_normal = orbit_mesh.global_transform.basis.y.normalized()
+	var reference_plane_normal = Vector3.UP
 	
-	#Rotate to get omega first
-	var Omega_axis = Vector3(0,1,0)
-	orbit_mesh.transform.basis = Basis(Omega_axis, deg_to_rad(omega_deg)) * orbit_mesh.transform.basis
-
-	#Rotate to get inclination
-	var axis = Vector3(1, 0, 0) # Or Vector3.RIGHT
-	orbit_mesh.global_transform.basis = Basis(axis, deg_to_rad(i_deg)) * orbit_mesh.global_transform.basis
-	
-	#Rotate to get RAAN next
-	var RAAN_axis = Vector3(0,1,0)
-	orbit_mesh.global_transform.basis = Basis(RAAN_axis, deg_to_rad(RAAN_deg)) * orbit_mesh.global_transform.basis
-
+	#rotate orbit mesh
+	orbit_mesh = rotate_orbit(orbit_mesh,omega_deg,RAAN_deg,i_deg)
 	var orbit_normal = orbit_mesh.global_transform.basis.y.normalized()
-	var plane1 = draw_plane_from_normal(orbit_mesh.global_transform.basis.y.normalized(),Color.RED)
 	
-	# (Mesh must already be in the scene and fully rotated)
 	var peri_vec_local : Vector3 = Vector3(1,0,0)
 	var rot_basis : Basis = orbit_mesh.global_transform.basis
-	var peri_vec_world : Vector3 = rot_basis * peri_vec_local
-
+	var peri_vec_world : Vector3 = rot_basis * peri_vec_local*a*e*2
+	
 	#-------------------------------------------------
 	# Drawing Vectors
 	#-------------------------------------------------
-	
-	draw_thick_line(peri_vec_world*50,Vector3.ZERO,Color.YELLOW_GREEN) # eccentricity vector
-
-	draw_thick_line(Vector3(50,0,0),Vector3.ZERO,Color.RED) # X 
+	## Draw X and Z axis
+	#draw_thick_line(Vector3(50,0,0),Vector3.ZERO,Color.RED) # X 
 	#draw_thick_line(Vector3(0,0,50),Vector3.ZERO,Color.BLUE) # Z
 	
+	## Draw eccentricity vector
+	draw_thick_line(peri_vec_world,Vector3.ZERO,Color.YELLOW_GREEN) # eccentricity vector
+
 	
-	
-	var theta_AN = deg_to_rad(-omega_deg)
+	#-------------------------------------------------
+	# Compute RAAN Vector
+	#-------------------------------------------------
+	var theta_AN = deg_to_rad(omega_deg)
 	var r_AN = a * (1.0 - e * e) / (1.0 + e * cos(theta_AN))
 	var RAAN_vec = reference_plane_normal.cross(orbit_normal).normalized()*r_AN*2
-
+	
+	if RAAN_vec == Vector3.ZERO:
+		RAAN_vec = Vector3(1,0,0)*r_AN*2
+		
 	draw_thick_line(RAAN_vec,Vector3.ZERO,Color.AQUA)
 	var Along_vec = RAAN_vec.cross(-orbit_normal).normalized()
 	var Tan_vec = RAAN_vec.cross(-reference_plane_normal).normalized()
 	
-	
+	#-------------------------------------------------	
+	# Compute Tangent to Ellipse at RAAN Vector
+	#-------------------------------------------------
 	var b = a * sqrt(1.0 - e * e)
 
-	var theta = deg_to_rad(360-omega_deg)     # true anomaly at ascending node
-	var r = a * (1.0 - e * e) / (1.0 + e * cos(theta))
-
 	# Point (x₀, y₀) on ellipse in the CENTERED frame
-	var x0 = r * cos(theta) + a * e         # shift from focus to center
-	var y0 = r * sin(theta)
+	var x0 = r_AN * cos(theta_AN) + a * e         # shift from focus to center
+	var y0 = r_AN * sin(theta_AN)
 
-	var t_c = Vector3(y0 * a * a,0 ,-x0 * b * b)
-	
-	var t_world = orbit_mesh.global_transform.basis * t_c.normalized()
+	var t_c = Vector3(y0 * a**2,0 ,-x0 * b**2).normalized()
+
+	var t_world =  orbit_mesh.global_transform.basis *t_c#
 	var along_world = t_world.cross(orbit_normal).normalized()
+
+	var v_proj = Plane(reference_plane_normal, 0).project(t_world)#(t_world - reference_plane_normal * t_world.dot(reference_plane_normal))
 	
-	var v_proj = (t_world - reference_plane_normal * t_world.dot(reference_plane_normal))
 	v_proj = v_proj.normalized()
-	#var Along_vec =  rot_basis * t_local
-	draw_thick_line(t_world*10,RAAN_vec/2,Color.ALICE_BLUE)
-	draw_thick_line(v_proj*10,RAAN_vec/2,Color.CORAL)
-	
-	
-	var angle_rad = acos(t_world.dot(v_proj))
+
+	var angle_rad = t_world.angle_to(v_proj)
 	var angle_deg = rad_to_deg(angle_rad)
-	print("Inclination angle: ", angle_deg)
+
+	var vector_blue = reference_plane_normal.cross(RAAN_vec).normalized()
+	var vector_red = orbit_normal.cross(RAAN_vec).normalized()
+
+
+
 	
-	var inc2_rad = acos(Along_vec.dot(Tan_vec))
-	print("Inclination angle test: ", rad_to_deg(inc2_rad))
-	#draw_thick_line(Along_vec*10,RAAN_vec/2,Color.ALICE_BLUE)
-	#draw_thick_line(Tan_vec*10,RAAN_vec/2,Color.CORAL)
+	#draw_thick_line(vector_blue*10,RAAN_vec/2,Color.BLUE)
+	#draw_thick_line(vector_red*10,RAAN_vec/2,Color.RED)
+	draw_thick_line(Vector3(1,0,0)*r_AN,Vector3.ZERO,Color.BLUE)
+	draw_inclination_arc(Vector3(1,0,0),RAAN_vec/4,Vector3.ZERO)
+
+	draw_inclination_arc(vector_red,vector_blue*5,RAAN_vec/2)
 	
-	
-	#draw_inclination_arc(v_proj,along_world,RAAN_vec/2)
-	
+	draw_inclination_arc(peri_vec_world.normalized(),RAAN_vec/2,Vector3.ZERO)
+	var inc_test = reference_plane_normal.angle_to(orbit_normal)
+	print("Inc test: ",rad_to_deg(inc_test))
+
+
+
 	var RAAN_vec_norm = RAAN_vec.normalized()
 	var angle2_rad = acos(RAAN_vec_norm.dot(Vector3(1,0,0)))
-	print("Right Ascenscion of Ascending Nodes: ", rad_to_deg(angle2_rad))
-	draw_inclination_arc(Vector3(1,0,0),RAAN_vec/4,Vector3.ZERO)
-	
+
 	var angle3_rad = acos(RAAN_vec_norm.dot(peri_vec_world.normalized()))
 	print("Argument of perigee: ", rad_to_deg(angle3_rad))
-	draw_inclination_arc(peri_vec_world,RAAN_vec/4,Vector3.ZERO)
+
+	var Test_vec = Vector3(1,0,3).normalized()
+	var Test_vec_world = (orbit_mesh.global_basis * Test_vec).normalized()
+	var Test_vec_proj = Plane(reference_plane_normal, 0).project(Test_vec_world)
 	
-	
-	
+	add_marker(peri_vec_world/2,'Perigee',Color.DARK_GREEN)
+	add_marker(RAAN_vec/2,'RAAN',Color.AQUA)
+#------------------------------------------------------------------
+# Functions
+#------------------------------------------------------------------
+##  Thick orbit path (tube made of cylinders)  --------------------------
+func draw_orbit_thick(
+		a       : float,
+		e       : float,
+		colour  : Color,
+		radius  : float = 0.25,
+		samples : int   = 360) -> Node3D:
+
+	# 1.  Points in focus frame
+	var pts := get_ellipse_points(a, e, samples)   # PackedVector3Array (size samples+1)
+
+	# 2.  Cylinder mesh prototype
+	var cyl := CylinderMesh.new()
+	cyl.top_radius    = radius
+	cyl.bottom_radius = radius
+	cyl.height        = 1.0          # will be scaled per-instance
+	cyl.radial_segments = 8
+
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.albedo_color = colour
+
+	# 3.  MultiMesh to hold all segment cylinders
+	var mmi  := MultiMeshInstance3D.new()
+	var mm   := MultiMesh.new()
+	mm.mesh          = cyl
+	mm.transform_format = MultiMesh.TRANSFORM_3D
+	#mm.color_format     = MultiMesh.COLOR_8BIT
+	mm.instance_count   = samples
+	mmi.multimesh       = mm
+	mmi.material_override = mat
+	add_child(mmi)
+
+	# 4.  Fill each segment instance
+	for i in samples:
+		var p0 = pts[i]
+		var p1 = pts[i+1]
+		var dir = p1 - p0
+		var len = dir.length()
+		var mid = (p0 + p1) * 0.5
+		var basis = Basis().looking_at(dir.normalized(), Vector3.UP)
+		basis = basis.rotated(basis.x, deg_to_rad(90))   # align cylinder +Y to dir
+
+		var xform = Transform3D(basis.scaled(Vector3(1, len, 1)), mid)
+		mm.set_instance_transform(i, xform)
+		mm.set_instance_color(i, colour)
+
+	return mmi
+
 
 func draw_orbit(a: float, e: float, color: Color, samples := 360)-> MeshInstance3D:
 	var points = get_ellipse_points(a, e, samples)
@@ -176,23 +230,31 @@ func draw_thick_line(target: Vector3,offset: Vector3, color:  Color = Color.AQUA
 	add_child(mi)                            # add to the scene
 	return mi
 
-#Redunant function to get a plane normal
-#func get_mesh_plane_normal(mi: MeshInstance3D) -> Vector3:
-	#var mesh := mi.mesh
-	#if mesh == null or mesh.get_surface_count() == 0:
-		#return Vector3.ZERO
-#
-	## Grab vertices from the first surface
-	#var arrays := mesh.surface_get_arrays(0)
-	#var verts  := arrays[Mesh.ARRAY_VERTEX] as PackedVector3Array
-	#if verts.size() < 3:
-		#return Vector3.ZERO                 # not enough points
-#
-	## Local normal from any three non‑collinear points
-	#var n_local := (verts[1] - verts[0]).cross(verts[2] - verts[0]).normalized()
-#
-	## Rotate into world space
-	#return (mi.global_transform.basis * n_local).normalized()
+func add_marker(pos      : Vector3,
+				text     : String,
+				colour   : Color = Color.WHITE,
+				radius   : float = 0.6) -> void:
+	# ----- small sphere
+	var sphere := SphereMesh.new()
+	sphere.radius = radius
+	sphere.height = radius * 2
+	var mi := MeshInstance3D.new()
+	mi.mesh = sphere
+
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.albedo_color = colour
+	mi.material_override = mat
+	mi.global_position  = pos
+	add_child(mi)
+
+	# ----- label
+	var lbl := Label3D.new()
+	lbl.text       = text
+	lbl.position   = pos*1.1 #+ Vector3.UP * (radius * 2.5)   # float above the dot
+	lbl.billboard  = BaseMaterial3D.BILLBOARD_ENABLED     # faces the camera
+	lbl.font_size   = 256
+	add_child(lbl)
 
 
 # ---------------------------------------------------------------------------
@@ -211,11 +273,8 @@ func draw_inclination_arc(ref_n       : Vector3,   # e.g. Vector3.UP
 		return null
 	axis = axis.normalized()
 	
-	var orb_n_norm = orb_n.normalized()
-	var ref_n_norm = ref_n.normalized()
-	#var inc_rad = acos(orb_n_norm.dot(ref_n_norm))
-	var dot_val = clamp(orb_n_norm.dot(ref_n_norm), -1.0, 1.0)
-	var inc_rad = acos(dot_val)
+
+	var inc_rad = orb_n.angle_to(ref_n)
 	
 	#print("Vector orb_n: ",orb_n_norm)
 	#print("Vector ref_n: ",ref_n_norm)
@@ -275,7 +334,7 @@ func draw_inclination_arc(ref_n       : Vector3,   # e.g. Vector3.UP
 func draw_plane_from_normal(
 	normal_vec : Vector3,                 # desired plane-normal (world)
 	colour     : Color   = Color.BLUE,
-	size       : float   = 120.0,         # width / height
+	size       : float   = 150.0,         # width / height
 	alpha      : float   = 0.05,          # 0 = invisible, 1 = opaque
 	) -> MeshInstance3D:
 
@@ -307,6 +366,21 @@ func draw_plane_from_normal(
 	return plane
 
 
+func rotate_orbit(orbit_mesh: Node3D,omega_deg: float,RAAN_deg: float,i_deg: float)-> MeshInstance3D:
+	#Rotate to get omega first
+	var Omega_axis = Vector3(0,1,0)
+	orbit_mesh.transform.basis = Basis(Omega_axis, deg_to_rad(omega_deg)) * orbit_mesh.transform.basis
+
+	#Rotate to get inclination
+	var axis = Vector3(1, 0, 0) # Or Vector3.RIGHT
+	orbit_mesh.global_transform.basis = Basis(axis, deg_to_rad(i_deg)) * orbit_mesh.global_transform.basis
+
+	#Rotate to get RAAN next
+	var RAAN_axis = Vector3(0,1,0)
+	orbit_mesh.global_transform.basis = Basis(RAAN_axis, deg_to_rad(RAAN_deg)) * orbit_mesh.global_transform.basis
+
+	var plane1 = draw_plane_from_normal(orbit_mesh.global_transform.basis.y.normalized(),Color.RED)
+	return orbit_mesh
 
 # ------------------------------------------------------------
 #  Compute RAAN (ascending‑node) unit vector in world space
