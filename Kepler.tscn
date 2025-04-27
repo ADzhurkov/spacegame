@@ -1,8 +1,10 @@
-[gd_scene load_steps=5 format=3 uid="uid://diqco54ewpklo"]
+[gd_scene load_steps=7 format=3 uid="uid://diqco54ewpklo"]
 
 [ext_resource type="Script" uid="uid://6knhj3d0org6" path="res://orbit_body.gd" id="1_r4xq0"]
 [ext_resource type="Script" uid="uid://csq46ayb75rbm" path="res://addons/debug_camera/scripts/DebugCamera3D.gd" id="2_1wqb5"]
 [ext_resource type="Script" uid="uid://18fbne78rrja" path="res://orbit_plot.gd" id="2_o2prw"]
+[ext_resource type="Script" uid="uid://bthhlpapvr6jv" path="res://ui.gd" id="4_ms7ir"]
+[ext_resource type="Script" uid="uid://dt1bx6nsdloim" path="res://panel.gd" id="5_d5kmw"]
 
 [sub_resource type="SphereMesh" id="SphereMesh_6pilr"]
 radius = 5.0
@@ -29,3 +31,36 @@ script = ExtResource("2_1wqb5")
 
 [node name="Node3D" type="Node3D" parent="."]
 script = ExtResource("2_o2prw")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+script = ExtResource("4_ms7ir")
+
+[node name="Panel" type="Panel" parent="CanvasLayer"]
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("5_d5kmw")
+
+[node name="A" type="HSlider" parent="CanvasLayer/Panel"]
+layout_mode = 0
+offset_right = 8.0
+offset_bottom = 16.0
+
+[node name="E" type="HSlider" parent="CanvasLayer/Panel"]
+offset_right = 8.0
+offset_bottom = 16.0
+
+[node name="I" type="HSlider" parent="CanvasLayer/Panel"]
+offset_right = 8.0
+offset_bottom = 16.0
+
+[node name="omega" type="HSlider" parent="CanvasLayer/Panel"]
+offset_right = 8.0
+offset_bottom = 16.0
+
+[node name="RAAN" type="HSlider" parent="CanvasLayer/Panel"]
+offset_right = 8.0
+offset_bottom = 16.0
+
+[node name="HSlider6" type="HSlider" parent="CanvasLayer/Panel"]
+offset_right = 8.0
+offset_bottom = 16.0
