@@ -10,7 +10,7 @@
 radius = 5.0
 height = 5.0
 
-[node name="Node3D" type="Node3D"]
+[node name="Main" type="Node3D"]
 
 [node name="OrbitBody" type="MeshInstance3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.471939, -0.384598, 0.35675)
@@ -29,38 +29,175 @@ transform = Transform3D(1, 0, 0, 0, -0.0121644, 0.999926, 0, -0.999926, -0.01216
 fov = 69.4548
 script = ExtResource("2_1wqb5")
 
-[node name="Node3D" type="Node3D" parent="."]
+[node name="PlotOrbit" type="Node3D" parent="."]
 script = ExtResource("2_o2prw")
 
-[node name="CanvasLayer" type="CanvasLayer" parent="."]
-script = ExtResource("4_ms7ir")
-
-[node name="Panel" type="Panel" parent="CanvasLayer"]
-offset_right = 40.0
-offset_bottom = 40.0
+[node name="Panel" type="Panel" parent="."]
+visible = false
+offset_right = 643.0
+offset_bottom = 345.0
 script = ExtResource("5_d5kmw")
 
-[node name="A" type="HSlider" parent="CanvasLayer/Panel"]
+[node name="A" type="HSlider" parent="Panel"]
+layout_mode = 1
+offset_right = 545.0
+offset_bottom = 91.0
+
+[node name="E" type="HSlider" parent="Panel"]
+layout_mode = 1
+offset_left = -1.0
+offset_top = 180.0
+offset_right = 544.0
+offset_bottom = 271.0
+
+[node name="I" type="HSlider" parent="Panel"]
+layout_mode = 1
+offset_left = 1.0
+offset_top = 114.0
+offset_right = 546.0
+offset_bottom = 205.0
+
+[node name="omega" type="HSlider" parent="Panel"]
+layout_mode = 1
+offset_top = 51.0
+offset_right = 545.0
+offset_bottom = 142.0
+
+[node name="RAAN" type="HSlider" parent="Panel"]
+layout_mode = 1
+offset_left = 1.0
+offset_top = 245.0
+offset_right = 546.0
+offset_bottom = 336.0
+
+[node name="Label" type="Label" parent="Panel"]
 layout_mode = 0
-offset_right = 8.0
-offset_bottom = 16.0
+offset_left = 563.0
+offset_top = 27.0
+offset_right = 790.0
+offset_bottom = 180.0
+text = "a
+"
 
-[node name="E" type="HSlider" parent="CanvasLayer/Panel"]
-offset_right = 8.0
-offset_bottom = 16.0
+[node name="Label2" type="Label" parent="Panel"]
+layout_mode = 0
+offset_left = 565.0
+offset_top = 83.0
+offset_right = 792.0
+offset_bottom = 132.0
+text = "e
+"
 
-[node name="I" type="HSlider" parent="CanvasLayer/Panel"]
-offset_right = 8.0
-offset_bottom = 16.0
+[node name="Label3" type="Label" parent="Panel"]
+layout_mode = 0
+offset_left = 571.0
+offset_top = 150.0
+offset_right = 798.0
+offset_bottom = 199.0
+text = "i
+"
 
-[node name="omega" type="HSlider" parent="CanvasLayer/Panel"]
-offset_right = 8.0
-offset_bottom = 16.0
+[node name="Label4" type="Label" parent="Panel"]
+layout_mode = 0
+offset_left = 560.0
+offset_top = 209.0
+offset_right = 787.0
+offset_bottom = 258.0
+text = "omega
+"
 
-[node name="RAAN" type="HSlider" parent="CanvasLayer/Panel"]
-offset_right = 8.0
-offset_bottom = 16.0
+[node name="Label5" type="Label" parent="Panel"]
+layout_mode = 0
+offset_left = 565.0
+offset_top = 278.0
+offset_right = 622.0
+offset_bottom = 327.0
+text = "RAAN
+"
 
-[node name="HSlider6" type="HSlider" parent="CanvasLayer/Panel"]
-offset_right = 8.0
-offset_bottom = 16.0
+[node name="GridContainer" type="GridContainer" parent="Panel"]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="UI" type="CanvasLayer" parent="."]
+script = ExtResource("4_ms7ir")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="UI"]
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="HBoxContainer" type="HBoxContainer" parent="UI/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="UI/VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(250, 0)
+layout_mode = 2
+text = "semi major axis (a) [km]"
+vertical_alignment = 3
+
+[node name="a" type="HSlider" parent="UI/VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(250, 50)
+layout_mode = 2
+max_value = 1000.0
+value = 100.0
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="UI/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="UI/VBoxContainer/HBoxContainer2"]
+custom_minimum_size = Vector2(250, 0)
+layout_mode = 2
+text = "eccentricty(e) [-]"
+vertical_alignment = 3
+
+[node name="e" type="HSlider" parent="UI/VBoxContainer/HBoxContainer2"]
+custom_minimum_size = Vector2(250, 50)
+layout_mode = 2
+max_value = 0.99
+step = 0.01
+
+[node name="HBoxContainer3" type="HBoxContainer" parent="UI/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="UI/VBoxContainer/HBoxContainer3"]
+custom_minimum_size = Vector2(250, 0)
+layout_mode = 2
+text = "inclination (i) [deg]"
+vertical_alignment = 3
+
+[node name="i" type="HSlider" parent="UI/VBoxContainer/HBoxContainer3"]
+custom_minimum_size = Vector2(250, 50)
+layout_mode = 2
+min_value = -180.0
+max_value = 180.0
+
+[node name="HBoxContainer4" type="HBoxContainer" parent="UI/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="UI/VBoxContainer/HBoxContainer4"]
+custom_minimum_size = Vector2(250, 0)
+layout_mode = 2
+text = "argument of periapsis (omega) [deg]"
+vertical_alignment = 3
+autowrap_mode = 3
+
+[node name="omega" type="HSlider" parent="UI/VBoxContainer/HBoxContainer4"]
+custom_minimum_size = Vector2(250, 50)
+layout_mode = 2
+max_value = 360.0
+
+[node name="HBoxContainer5" type="HBoxContainer" parent="UI/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="UI/VBoxContainer/HBoxContainer5"]
+custom_minimum_size = Vector2(250, 0)
+layout_mode = 2
+text = "Right ascension of ascending node (RAAN)  [deg]"
+vertical_alignment = 3
+autowrap_mode = 3
+
+[node name="RAAN" type="HSlider" parent="UI/VBoxContainer/HBoxContainer5"]
+custom_minimum_size = Vector2(250, 50)
+layout_mode = 2
+max_value = 360.0
