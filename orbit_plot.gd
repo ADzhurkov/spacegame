@@ -55,10 +55,10 @@ func _rebuild_orbit(a: float, e: float,
 	var peri_vec_local : Vector3 = Vector3(1,0,0)
 	var rot_basis : Basis = orbit_mesh.global_transform.basis
 	var peri_vec_world : Vector3 = Vector3.ZERO
-	if e == 0:
-		peri_vec_world = rot_basis * peri_vec_local*a*2
-	else:
-		peri_vec_world = rot_basis * peri_vec_local*a*e*2
+	#if e == 0:
+	#	peri_vec_world = rot_basis * peri_vec_local*a*2
+	#else:
+	peri_vec_world = rot_basis * peri_vec_local*a*(1-e)
 
 	## Draw X and Z axis
 	#draw_thick_line(Vector3(50,0,0),Vector3.ZERO,Color.RED) # X 
@@ -70,10 +70,13 @@ func _rebuild_orbit(a: float, e: float,
 	#-------------------------------------------------
 	var theta_AN = deg_to_rad(omega_deg)
 	var r_AN = a * (1.0 - e * e) / (1.0 + e * cos(theta_AN))
-	var RAAN_vec = reference_plane_normal.cross(orbit_normal).normalized()*r_AN*2
+	var theta_DN = deg_to_rad(180-omega_deg)
+	var r_DN = a * (1.0 - e * e) / (1.0 + e * cos(theta_DN))
+	var RAAN_vec = reference_plane_normal.cross(orbit_normal).normalized()*r_AN
+	
 	
 	if RAAN_vec == Vector3.ZERO:
-		RAAN_vec = Vector3(1,0,0)*r_AN*2
+		RAAN_vec = Vector3(1,0,0)*r_AN
 		
 
 	#-------------------------------------------------	
@@ -101,21 +104,31 @@ func _rebuild_orbit(a: float, e: float,
 	## Draw RAAN vector
 	draw_thick_line(RAAN_vec,Vector3.ZERO,Color.AQUA,world_drawings)
 	##Draw X vector
-	draw_thick_line(Vector3(1,0,0)*100,Vector3.ZERO,Color.BLUE,world_drawings)
+	draw_thick_line(Vector3(1,0,0)*r_AN/2,Vector3.ZERO,Color.BLUE,world_drawings)
 	
-	##Draw RAAN, inclination and omega arcs
-	draw_inclination_arc(Vector3(1,0,0),RAAN_vec/4,Vector3.ZERO,world_drawings)
-	draw_inclination_arc(vector_red,vector_blue*5,RAAN_vec/2,world_drawings)
-	draw_inclination_arc(peri_vec_world.normalized(),RAAN_vec/2,Vector3.ZERO,world_drawings)
+	## Draw RAAN arc
+	draw_inclination_arc(Vector3(1,0,0),RAAN_vec/4,Vector3.ZERO,reference_plane_normal,world_drawings,Color.AQUA)
+	## Draw argument of perigee arc
+	draw_inclination_arc(RAAN_vec.normalized(),peri_vec_world/2,Vector3.ZERO,orbit_normal,world_drawings,Color.GREEN_YELLOW)
+	## Draw inclination arc
+	var inc_arc_normal = orbit_normal.cross(reference_plane_normal).normalized()
+	draw_inclination_arc(vector_red,vector_blue*10,RAAN_vec,inc_arc_normal,world_drawings,Color.DARK_SALMON)
 
 	## Draw planes
 	draw_plane_from_normal(orbit_normal,world_drawings,Color.CRIMSON)
 	draw_plane_from_normal(reference_plane_normal,world_drawings,Color.CADET_BLUE)
 
 	## Add perigee and RAAN markers
-	add_marker(peri_vec_world/2,'Perigee',Color.DARK_GREEN,world_drawings)
-	add_marker(RAAN_vec/2,'RAAN',Color.AQUA,world_drawings)
-
+	var perigee_offset = 0
+	if abs(omega_deg - 0.0)   < 2.0 \
+	|| abs(omega_deg - 180.0) < 2.0 \
+	|| abs(omega_deg - 360.0) < 2.0:
+		perigee_offset = 0.05
+	add_marker(peri_vec_world,'Perigee',Color.DARK_GREEN,world_drawings,perigee_offset)
+	add_marker(RAAN_vec,'AN',Color.AQUA,world_drawings)
+	add_marker(-RAAN_vec.normalized()*r_DN,'DN',Color.AQUA,world_drawings)
+	
+	
 ##  Thick orbit path (tube made of cylinders)  --------------------------
 func draw_orbit_thick(
 		a       : float,
@@ -213,7 +226,7 @@ func draw_thick_line(target: Vector3,offset: Vector3, color:  Color = Color.AQUA
 	cyl.bottom_radius = radius
 	cyl.height        = target.length()      # full length
 	cyl.radial_segments = 16                 # smoothness
-
+	
 	# -- 2. Create a material so the colour shows even without lights
 	var mat := StandardMaterial3D.new()
 	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
@@ -223,11 +236,11 @@ func draw_thick_line(target: Vector3,offset: Vector3, color:  Color = Color.AQUA
 	var mi := MeshInstance3D.new()
 	mi.mesh = cyl
 	mi.material_override = mat
-
+	
 	# -- 4. ORIENT with a quaternion  (+Y  →  target direction)
 	var dir_norm = target.normalized()
 	var q = Quaternion(Vector3.UP, dir_norm)       # shortest‑arc rotation
-	mi.global_position = offset
+	mi.global_position = offset+target/2
 	#mi.global_position = (Vector3.UP + target) * 0.5
 	mi.transform.basis = Basis(q)            # apply rotation
 
@@ -241,6 +254,7 @@ func add_marker(pos      : Vector3,
 				text     : String,
 				colour   : Color = Color.WHITE,
 				parent: Node3D  = self,
+				offset: float = 0,
 				radius   : float = 0.6,) -> void:
 	# ----- small sphere
 	var sphere := SphereMesh.new()
@@ -259,38 +273,50 @@ func add_marker(pos      : Vector3,
 	# ----- label
 	var lbl := Label3D.new()
 	lbl.text       = text
-	lbl.position   = pos*1.1 #+ Vector3.UP * (radius * 2.5)   # float above the dot
+	lbl.position   = pos*(1.05+offset) #+ Vector3.UP * (radius * 2.5)   # float above the dot
 	lbl.billboard  = BaseMaterial3D.BILLBOARD_ENABLED     # faces the camera
 	lbl.font_size   = 256
 	parent.add_child(lbl)
 
 
 # ---------------------------------------------------------------------------
-#  Draw a curved arc that visualises the inclination angle
+#  Draw a curved arc that visualises the angle between 2 vectors
 # ---------------------------------------------------------------------------
-func draw_inclination_arc(ref_n       : Vector3,   # e.g. Vector3.UP
-							orb_n       : Vector3,   # your orbit normal (world space)
+func draw_inclination_arc(ref_n         : Vector3,   
+							orb_n       : Vector3,   
 							offset      : Vector3,
+							normal      : Vector3, #normal vector depending on what is drawn
 							parent: Node3D = self,
+							arc_color   : Color = Color.YELLOW,
 							arc_steps   : int   = 32,
-							arc_color   : Color = Color.YELLOW,) -> Node3D:
+							) -> Node3D:
 
 	# -- 1.  axis of rotation  (line of nodes)
 	var axis = ref_n.cross(orb_n.normalized())
-	if axis.length_squared() < 1e-8:
-		push_warning("Planes are parallel – nothing to draw.")
-		return null
-	axis = axis.normalized()
-	
-
 	var inc_rad = orb_n.angle_to(ref_n)
+	
+	if axis.length_squared() < 1e-8:
+		if ref_n.is_equal_approx(orb_n.normalized()):
+			push_warning("Planes are parallel – nothing to draw.")
+			return null
+		else:
+			axis = normal
+			inc_rad = deg_to_rad(180)
+	
+	axis = axis.normalized()
+	var sign = sign( (ref_n.cross(orb_n)).dot(normal))
+	print(sign)
+	if sign <0:
+		axis = normal.normalized()
+		inc_rad = deg_to_rad((360-rad_to_deg(inc_rad)))
+
 	
 	#print("Vector orb_n: ",orb_n_norm)
 	#print("Vector ref_n: ",ref_n_norm)
 	
 	print("angle: ", rad_to_deg(inc_rad))
 	
-	var arc_radius = orb_n.length()*inc_rad
+	var arc_radius = orb_n.length() #*inc_rad
 	# -- 2.  build points along the arc by slerping ref_n → orb_n
 	var pts := PackedVector3Array()
 	for i in range(arc_steps + 1):
@@ -402,61 +428,3 @@ func get_raan_vector(ref_n: Vector3, orb_n: Vector3) -> Vector3:
 	if raan.length_squared() == 0.0:
 		return Vector3.ZERO
 	return raan.normalized()
-
-
-# ------------------------------------------------------------
-# Get the rotation matrix from PQW to ECI
-# ------------------------------------------------------------
-func get_rotation_matrix_to_eci(RAAN: float, inc: float, omega: float) -> Basis:
-	'''
-	This function computes the rotation matrix from orbit plane (pqw) to inertial (eci)
-	'''
-	RAAN = deg_to_rad(RAAN)
-	inc = deg_to_rad(inc)
-	omega = deg_to_rad(omega)
-	
-	var cosO = cos(RAAN)
-	var sinO = sin(RAAN)
-	var cosi = cos(inc)
-	var sini = sin(inc)
-	var cosw = cos(omega)
-	var sinw = sin(omega)
-
-	#Check if these are correct? 
-	var x_axis = Vector3(
-		cosO * cosw - sinO * sinw * cosi,
-		sinO * cosw + cosO * sinw * cosi,
-		sinw * sini
-	)
-
-	var y_axis = Vector3(
-		- cosO * sinw - sinO * cosw * cosi,
-		- sinO * sinw + cosO * cosw * cosi,
-		cosw * sini
-	)
-
-	var z_axis = Vector3(
-		- sinO * sini,
-		cosO * sini,
-		cosi
-	)
-
-	return Basis(x_axis, y_axis, z_axis)
-
-
-
-	#var reference_plane := MeshInstance3D.new()
-	#reference_plane.mesh  = PlaneMesh.new()
-	#reference_plane.scale = Vector3(100, 1, 100)      # enlarge
-	#add_child(reference_plane)
-#
-	## ---  make it semi‑transparent  ---
-	#var mat := StandardMaterial3D.new()
-	#mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED     # keep colour flat
-	#mat.albedo_color = Color(0.2, 0.6, 1.0, 0.5)               #   RGBA (A = 0.25)
-	#mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA        # enable blending
-	#mat.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_ALWAYS      # avoid sorting glitches (optional)
-#
-	#reference_plane.material_override = mat
-#
-	#add_child(reference_plane)
