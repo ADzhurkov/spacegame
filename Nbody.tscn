@@ -1,0 +1,19 @@
+[gd_scene load_steps=4 format=3 uid="uid://cj1paa6ax0w4s"]
+
+[ext_resource type="PackedScene" uid="uid://dhtblhyquktj3" path="res://GravityBody.tscn" id="1_5hb6g"]
+[ext_resource type="Script" uid="uid://cefgaany4g4iq" path="res://ForceSystem.gd" id="2_nwiew"]
+[ext_resource type="Script" uid="uid://csq46ayb75rbm" path="res://addons/debug_camera/scripts/DebugCamera3D.gd" id="3_wxpgq"]
+
+[node name="Main" type="Node3D"]
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.725531, 0.68819, 0, -0.68819, 0.725531, 0, 4.49672, 6.95557)
+script = ExtResource("3_wxpgq")
+
+[node name="OmniLight3D" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.725531, 0.68819, 0, -0.68819, 0.725531, 0, 3.67352, -1.69393)
+light_energy = 16.0
+
+[node name="ForceManager" type="Node3D" parent="."]
+script = ExtResource("2_nwiew")
+GravityBody_scene = ExtResource("1_5hb6g")
